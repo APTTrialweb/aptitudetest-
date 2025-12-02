@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Career Guidance Test</title>
+<style>
+    body {
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #fceaea, #ffffff);
+        margin: 0;
+        padding: 0;
+    }
+    .container {
+        width: 100%;
+        max-width: 720px;
+        margin: 40px auto;
+        background: #ffffff;
+        padding: 28px;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        animation: fadeIn 0.45s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    h2 {
+        margin-top: 0;
+        text-align: center;
+        color: #e63946;
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    label {
+        font-weight: 600;
+        display: block;
+        margin-top: 14px;
+        font-size: 14px;
+    }
+    input, select {
+        width: 100%;
+        padding: 10px 12px;
+        margin-top: 8px;
+        border-radius: 10px;
+        border: 1.3px solid #e6e6e6;
+        background: #fafafa;
+        font-size: 15px;
+        transition: 0.2s;
+    }
+    input:focus, select:focus {
+        border-color: #e63946;
+        background: #fff;
+        box-shadow: 0 6px 16px rgba(230,57,70,0.12);
+        outline: none;
+    }
+    .row { display:flex; gap:12px; }
+    .row .col { flex:1; }
+    button.primary {
+        width: 100%;
+        background: linear-gradient(90deg,#e63946,#c52534);
+        border: none;
+        padding: 12px 16px;
+        color: white;
+        border-radius: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 18px;
+        font-weight: 700;
+        transition: 0.25s;
+    }
+    button.primary:hover { transform: translateY(-3px); }
+    button.ghost {
+        background: transparent; border: 1px solid #ddd; color:#444; padding:10px 14px; border-radius:8px; cursor:pointer;
+    }
+    .hidden { display: none; }
+
+    .question {
+        margin-bottom: 18px;
+        padding: 14px;
+        background: #fff7f7;
+        border-left: 6px solid #e63946;
+        border-radius: 10px;
+    }
+    .question h3 { margin:0 0 10px 0; font-size:16px; }
+
+    #careerResult { text-align:center; font-size:16px; font-weight:600; color:#2d3436; margin-top:10px; padding:12px; background:#f2f2f2; border-radius:10px; }
+
+    /* small helpers */
+    .meta { text-align:center; color:#666; font-size:13px; margin-top:6px; }
+    #progressBar { height:12px; background:#ffecee; border-radius:12px; overflow:hidden; }
+    #progress { height:100%; width:0%; background:linear-gradient(90deg,#e63946,#ff6b6b); transition: width .35s ease; }
+
+</style>
+</head>
+<body>
+
+<div class="container" id="formPage">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Academy_logo.svg/1200px-Academy_logo.svg.png" alt="APT Logo" style="width:88px; display:block; margin:0 auto 8px; opacity:0.95;">
+    <h2>Quick Career Guidance — Start Here</h2>
+    <p class="meta">Fill basic details and answer short questions. We'll suggest the best-fit careers from your options.</p>
+
+    <label for="name">Full name</label>
+    <input id="name" type="text" placeholder="e.g. Rahul Sharma" />
+
+    <label for="mobile">Mobile number</label>
+    <input id="mobile" type="tel" placeholder="10-digit mobile number" />
+
+    <label for="class">Your class / status</label>
+    <select id="class">
+        <option value="">Select</option>
+        <option value="10">Class 10</option>
+        <option value="11">Class 11</option>
+        <option value="12">Class 12</option>
+        <option value="college">College</option>
+        <option value="graduate">Graduate</option>
+    </select>
+
+    <button class="primary" onclick="submitForm()">Start Test</button>
+</div>
+
+
+<div class="container hidden" id="testPage">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Academy_logo.svg/1200px-Academy_logo.svg.png" alt="APT Logo" style="width:72px; display:block; margin:0 auto 8px;">
+    <h2>Career Fit Test</h2>
+    <div id="progressBar" style="margin-bottom:14px;">
+        <div id="progress"></div>
+    </div>
+
+    <div id="questionContainer"></div>
+
+    <div style="display:flex; gap:10px; margin-top:8px;">
+        <button id="prevBtn" class="ghost" onclick="prevQuestion()" style="display:none;flex:1">Previous</button>
+        <button id="nextBtn" class="primary" onclick="nextQuestion()" style="flex:1">Next</button>
+    </div>
+    <p class="meta">You can go back and change answers anytime before submitting.</p>
+</div>
+
+<div class="container hidden" id="resultPage">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Academy_logo.svg/1200px-Academy_logo.svg.png" alt="APT Logo" style="width:72px; display:block; margin:0 auto 8px;">
+    <h2>Your Recommended Careers</h2>
+    <div id="careerResult"></div>
+    <p class="meta">Recommendations based on your answers. Use these as starting points — counselling can refine them further.</p>
+    <div style="display:flex; gap:10px; margin-top:14px;">
+        <button class="primary" onclick="restart()" style="flex:1">Retake Test</button>
+        <button class="ghost" onclick="downloadResult()" style="flex:1">Download Result</button>
+    </div>
+</div>
+
+<script>
+/* -----------------------------
+   Questions, career options and mapping
+   ----------------------------- */
+let current = 0;
+
+const careers = [
+  "Chartered Accountancy (CA)",
+  "Company Secretary (CS)",
+  "Chartered Financial Analyst (CFA)",
+  "Master of Business Administration (MBA)",
+  "Association of Chartered Certified Accountants (ACCA)",
+  "Certified Public Accountant (CPA)",
+  "Equity Analyst (NISM)",
+  "Common Law Admission Test (CLAT)",
+  "Bank Probationary Officer (PO)",
+  "Civil Services (IAS / IPS / IRS)",
+  "State PSC / MPPSC",
+  "Digital Marketing & Social Media Management",
+  "Studies Abroad (Graduation & PG)",
+  "Delhi University (CUET)"
+];
+
+const questions = [
+    { q: "Which subject do you enjoy the most?", options: ["Choose...","Accounts / Finance","Law","Business & Management","Mathematics","Economics","Public Administration","Computer / Tech"] },
+    { q: "What type of work do you prefer?", options: ["Choose...","Analysis","Research","People Interaction","Rules & Compliance","Creative Work","Problem Solving"] },
+    { q: "Which skill describes you best?", options: ["Choose...","Detail Oriented","Logical Thinker","Leader","Problem Solver","Creative","Decision Maker"] },
+    { q: "Your long-term career dream?", options: ["Choose...","Corporate Job","Government Job","Own Business","Finance Professional","Law Professional","Study Abroad"] },
+    { q: "Which environment do you prefer?", options: ["Choose...","Office","Field","Entrepreneurship","Government Department","Corporate Finance","Tech / Online"] },
+    { q: "Which examination path are you open to?", options: ["Choose...","Professional Chartered (CA/CS/CFA)","Competitive Exams (IAS/PSC/CLAT/PO)","University Admission (DU/CUET)","Overseas Study","Certifications / Short Courses"] },
+    { q: "How comfortable are you with numbers & calculations?", options: ["Choose...","Very Comfortable","Average","Not Comfortable"] },
+    { q: "Do you like reading & theoretical study?", options: ["Choose...","Yes, a lot","Moderately","No, I prefer practical work"] },
+    { q: "What motivates you the most?", options: ["Choose...","High Salary","Government Job Security","Foreign Opportunities","Corporate Growth","Creativity & Freedom"] },
+    { q: "Which skill do you want to develop the most?", options: ["Choose...","Communication","Leadership","Technical Skills","Finance Skills","Law & Compliance","Marketing"] }
+];
+
+// A lightweight mapping from answers to careers. Not exhaustive — used to score recommendations.
+const mapping = {
+  "Accounts / Finance": ["Chartered Accountancy (CA)", "ACCA", "Certified Public Accountant (CPA)", "Chartered Financial Analyst (CFA)"],
+  "Law": ["Common Law Admission Test (CLAT)", "Company Secretary (CS)"],
+  "Business & Management": ["Master of Business Administration (MBA)"],
+  "Mathematics": ["Chartered Financial Analyst (CFA)", "Equity Analyst (NISM)"],
+  "Economics": ["Equity Analyst (NISM)", "Chartered Financial Analyst (CFA)"],
+  "Public Administration": ["Civil Services (IAS / IPS / IRS)", "State PSC / MPPSC"],
+  "Computer / Tech": ["Digital Marketing & Social Media Management", "Studies Abroad (Graduation & PG)"],
+
+  "Analysis": ["Chartered Accountancy (CA)", "Chartered Financial Analyst (CFA)", "Equity Analyst (NISM)"],
+  "Research": ["Studies Abroad (Graduation & PG)", "Master of Business Administration (MBA)", "Equity Analyst (NISM)"],
+  "People Interaction": ["Master of Business Administration (MBA)", "Digital Marketing & Social Media Management"],
+  "Rules & Compliance": ["Company Secretary (CS)", "Chartered Accountancy (CA)"],
+  "Creative Work": ["Digital Marketing & Social Media Management"],
+  "Problem Solving": ["Civil Services (IAS / IPS / IRS)", "Bank Probationary Officer (PO)", "MBA"],
+
+  "Detail Oriented": ["Chartered Accountancy (CA)", "Company Secretary (CS)", "ACCA"],
+  "Logical Thinker": ["Chartered Financial Analyst (CFA)", "Equity Analyst (NISM)"],
+  "Leader": ["MBA","Civil Services (IAS / IPS / IRS)"],
+  "Problem Solver": ["Bank Probationary Officer (PO)", "Civil Services (IAS / IPS / IRS)"],
+  "Creative": ["Digital Marketing & Social Media Management"],
+  "Decision Maker": ["MBA","CA"],
+
+  "Corporate Job": ["MBA","Chartered Accountancy (CA)","ACCA"],
+  "Government Job": ["Civil Services (IAS / IPS / IRS)", "State PSC / MPPSC", "Bank Probationary Officer (PO)"],
+  "Own Business": ["MBA","Digital Marketing & Social Media Management"],
+  "Finance Professional": ["Chartered Financial Analyst (CFA)","Equity Analyst (NISM)","CA"],
+  "Law Professional": ["Common Law Admission Test (CLAT)","Company Secretary (CS)"],
+  "Study Abroad": ["Studies Abroad (Graduation & PG)"],
+
+  "Office": ["Chartered Accountancy (CA)", "MBA"],
+  "Field": ["State PSC / MPPSC","Civil Services (IAS / IPS / IRS)"],
+  "Entrepreneurship": ["MBA","Digital Marketing & Social Media Management"],
+  "Government Department": ["Civil Services (IAS / IPS / IRS)", "State PSC / MPPSC"],
+  "Corporate Finance": ["Chartered Financial Analyst (CFA)","CA","Equity Analyst (NISM)"],
+  "Tech / Online": ["Digital Marketing & Social Media Management","Studies Abroad (Graduation & PG)"],
+
+  "Professional Chartered (CA/CS/CFA)": ["Chartered Accountancy (CA)","Company Secretary (CS)","Chartered Financial Analyst (CFA)","ACCA","CPA"],
+  "Competitive Exams (IAS/PSC/CLAT/PO)": ["Civil Services (IAS / IPS / IRS)","State PSC / MPPSC","Common Law Admission Test (CLAT)","Bank Probationary Officer (PO)"],
+  "University Admission (DU/CUET)": ["Delhi University (CUET)"],
+  "Overseas Study": ["Studies Abroad (Graduation & PG)"],
+  "Certifications / Short Courses": ["Digital Marketing & Social Media Management","Equity Analyst (NISM)"]
+};
+
+/* -----------------------------
+   Answers storage to avoid DOM null access
+   ----------------------------- */
+const answers = Array(questions.length).fill("");
+
+/* Renderers */
+function renderQuestion(index) {
+  const q = questions[index];
+  const selected = answers[index] || "";
+
+  const html = `
+    <div class="question">
+      <h3>${index + 1}. ${q.q}</h3>
+      <select id="ansSelect" onchange="saveAnswer(this.value)">
+        ${q.options.map(opt => `<option value=\"${opt}\" ${opt===selected? 'selected': ''}>${opt}</option>`).join('')}
+      </select>
+    </div>
+  `;
+  document.getElementById('questionContainer').innerHTML = html;
+  updateProgress();
+}
+
+function saveAnswer(value) {
+  // Save to answers array for current question
+  answers[current] = value;
+}
+
+function updateProgress(){
+  const percent = Math.round(((current + 1) / questions.length) * 100);
+  document.getElementById('progress').style.width = percent + '%';
+}
+
+/* Navigation */
+function nextQuestion(){
+  // ensure user has selected something (not 'Choose...') before moving on
+  const sel = answers[current];
+  if (!sel || sel === 'Choose...') {
+    // if on last question allow submit (user may want to skip?) we'll force answer for accuracy
+    alert('Please select an option before continuing.');
+    return;
+  }
+
+  if (current < questions.length - 1) {
+    current++;
+    renderQuestion(current);
+    document.getElementById('prevBtn').style.display = 'inline-block';
+    if (current === questions.length - 1) document.getElementById('nextBtn').innerText = 'Submit';
+  } else {
+    // final submit
+    calculateCareer();
+  }
+}
+
+function prevQuestion(){
+  if (current > 0) {
+    current--;
+    renderQuestion(current);
+    document.getElementById('nextBtn').innerText = 'Next';
+    if (current === 0) document.getElementById('prevBtn').style.display = 'none';
+  }
+}
+
+/* Form handlers */
+function submitForm(){
+  const name = (document.getElementById('name').value || '').trim();
+  const mobile = (document.getElementById('mobile').value || '').trim();
+  if (!name || !mobile) return alert('Please enter name and mobile number to continue.');
+
+  document.getElementById('formPage').classList.add('hidden');
+  document.getElementById('testPage').classList.remove('hidden');
+  current = 0;
+  // reset answers
+  for (let i=0;i<answers.length;i++) answers[i] = "";
+  renderQuestion(current);
+  document.getElementById('prevBtn').style.display = 'none';
+  document.getElementById('nextBtn').innerText = 'Next';
+}
+
+/* Calculation logic — uses answers[] only (no DOM queries for other indexes) */
+function calculateCareer(){
+  // ensure all questions answered
+  for (let i=0;i<answers.length;i++){
+    if (!answers[i] || answers[i] === 'Choose...'){
+      alert('Please answer all questions before submitting.');
+      current = i; renderQuestion(current); document.getElementById('prevBtn').style.display = (current>0? 'inline-block':'none');
+      return;
+    }
+  }
+
+  // score tally
+  const tally = {}; // career -> count
+  function addScores(arr){
+    arr.forEach(c => {
+      tally[c] = (tally[c] || 0) + 1;
+    });
+  }
+
+  // for each answer, map to careers
+  answers.forEach(ans => {
+    if (mapping[ans]) addScores(mapping[ans]);
+  });
+
+  // if tally empty (unlikely), fallback: map first answers
+  if (Object.keys(tally).length === 0){
+    // try direct keyword mapping from first answer
+    const fallback = answers[0];
+    if (mapping[fallback]) addScores(mapping[fallback]);
+  }
+
+  // convert tally to sorted list
+  const scored = Object.entries(tally).sort((a,b) => b[1]-a[1]);
+  const recommended = scored.slice(0,6).map(s => `${s[0]}${s[1]>1? ' ('+s[1]+' matches)':''}`);
+
+  // Determine personality type
+let personality = "Balanced Explorer";
+if (answers.includes("Very Comfortable") || answers.includes("Analysis") || answers.includes("Mathematics")) personality = "Analytical Thinker";
+if (answers.includes("People Interaction") || answers.includes("Communication") || answers.includes("Leader")) personality = "Social Leader";
+if (answers.includes("Creative Work") || answers.includes("Creativity & Freedom") || answers.includes("Marketing")) personality = "Creative Strategist";
+if (answers.includes("Government Job") || answers.includes("Rules & Compliance") || answers.includes("Public Administration")) personality = "Discipline‑Focused Achiever";
+
+const resultHtml = `
+  <div style="padding:8px 12px; border-radius:8px; background:#fff; text-align:left;">
+    <p style="margin:0 0 6px 0; font-weight:700; font-size:15px; color:#e63946;">Your Career Personality</p>
+    <p style="margin:0 0 10px 0; font-size:14px;">${personality}</p>
+
+    <p style="margin:0 0 4px 0; font-weight:600; font-size:14px;">Top Recommendations</p>
+    <ul style="padding-left:18px; margin:4px 0; font-size:14px; line-height:1.4;">
+      ${recommended.map(r => `<li>${r}</li>`).join('')}
+    </ul>
+  </div>`;
+
+  document.getElementById('testPage').classList.add('hidden');
+  document.getElementById('careerResult').innerHTML = resultHtml;
+  document.getElementById('resultPage').classList.remove('hidden');
+}
+
+function restart(){
+  document.getElementById('resultPage').classList.add('hidden');
+  document.getElementById('formPage').classList.remove('hidden');
+}
+
+function downloadResult(){
+  const name = document.getElementById('name').value || 'Student';
+  const text = `Name: ${name}\n\nAnswers:\n${answers.map((a,i)=> (i+1)+'. '+a).join('\n')}\n\nRecommendations:\n${document.getElementById('careerResult').innerText}`;
+  const blob = new Blob([text], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = (name.replace(/\s+/g,'_') || 'result') + '_career_result.txt';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+</script>
+</body>
+</html>
