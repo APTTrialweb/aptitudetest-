@@ -148,7 +148,7 @@ const answers = Array(questions.length).fill("");
 function renderQuestion(index){
   const q = questions[index];
   const selected = answers[index] || "";
-  const html = `\n    <div class="question">\n      <h3>${index+1}. ${q.q}</h3>\n      <select id="ansSelect" onchange="saveAnswer(this.value)">\n        ${q.options.map(opt => `<option value=\\"${opt}\\" ${opt===selected? 'selected':''}>${opt}</option>`).join('')}\n      </select>\n    </div>\n  `;
+  const html = `\n    <div class="question">\n      <h3>${index+1}. ${q.q}</h3>\n      <select id="ansSelect" onchange="saveAnswer(this.value)">\n        ${q.options.map(opt => `<option value="${opt}" ${opt===selected? 'selected':''}>${opt}</option>`).join('')}\n      </select>\n    </div>\n  `;
   document.getElementById('questionContainer').innerHTML = html;
   updateProgress();
 }
@@ -208,7 +208,7 @@ function calculateCareer(){
       <p style="margin:0 0 10px 0; font-size:14px;">${personality}</p>
       <p style="margin:0 0 4px 0; font-weight:600; font-size:14px;">Top Recommendations</p>
       <ul style="padding-left:18px; margin:4px 0; font-size:14px; line-height:1.4;">
-        ${recommended.map(r=>`<li>${r}</li>`).join('')}
+        ${recommended.length ? recommended.map(r => `<li>${r}</li>`).join('') : '<li>No strong matches found</li>'}
       </ul>
     </div>`;
 
